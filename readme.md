@@ -5,4 +5,4 @@ picture
 story feature
 edit details
 share to story
-search accounts
+search accounts# insta_clone

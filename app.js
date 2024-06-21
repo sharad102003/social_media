@@ -1,8 +1,10 @@
-var createError = require('http-errors');
+ var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+const expressSession = require("express-session");//express session ek user ko logged-in krke rakhta h
+const passport = require('passport');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -12,6 +14,17 @@ var app = express();
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
+
+app.use(expressSession({
+  resave: false,
+  saveUninitialized: false,
+  secret: "lola le le"
+
+}));
+app.use(passport.initialize());//ye passport jitne bhi protected routes h unhe control krta h
+app.use(passport.session());
+passport.serializeUser(usersRouter.serializeUser());
+passport.deserializeUser(usersRouter.deserializeUser());
 
 app.use(logger('dev'));
 app.use(express.json());
