@@ -12,6 +12,8 @@ const upload = require("./multer");
 const { redirect } = require('express/lib/response');
 const comment = require('./comment');
 const uploadOnCloudinary = require('../utility/cloudinary');
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 router.get('/', function(req, res) {
   res.render('index', {footer: false});
@@ -213,45 +215,16 @@ function isLoggedIn(req, res, next){
   if(req.isAuthenticated()) return next(); // corrected from req.authenticated()
   res.redirect("/login");
 }
-router.post('/update', upload.single('image'), async function(req, res, next) {
-  try {
-    const user = await userModel.findOneAndUpdate(
-      { username: req.session.passport.user },
-      { username: req.body.username, name: req.body.name, bio: req.body.bio },
-      { new: true }
-    );
-
-    if (req.file) {
-      console.log('File uploaded:', req.file);
-      const profilePath = req.file.path;
-      const profileUrl = await uploadOnCloudinary(profilePath);
-      console.log('Profile URL:', profileUrl);
-      user.profileImage = profileUrl;
-    } else {
-      console.log('No file uploaded');
-    }
-
-    await user.save();
-    res.redirect("/profile");
-  } catch (error) {
-    next(error);
-  }
-});
-
 router.post('/upload', isLoggedIn, upload.single('image'), async function(req, res) {
   try {
     const user = await userModel.findOne({ username: req.session.passport.user });
 
-    let uploadUrl = null; // Initialize uploadUrl
-
+    let uploadUrl = null;
     if (req.file) {
-      const uploadPath = req.file.path;
-      uploadUrl = await uploadOnCloudinary(uploadPath); // Assign the result to uploadUrl
-    } else {
-      console.log('No file uploaded');
+      const buffer = req.file.buffer;
+      uploadUrl = await uploadOnCloudinary(buffer);
     }
 
-    // Ensure that uploadUrl is only used if it is not null
     const post = await postModel.create({
       picture: uploadUrl,
       user: user._id,
@@ -266,6 +239,29 @@ router.post('/upload', isLoggedIn, upload.single('image'), async function(req, r
     res.status(500).send('Internal Server Error');
   }
 });
+
+router.post('/update', isLoggedIn, upload.single('image'), async function(req, res) {
+  try {
+    const user = await userModel.findOneAndUpdate(
+      { username: req.session.passport.user },
+      { username: req.body.username, name: req.body.name, bio: req.body.bio },
+      { new: true }
+    );
+
+    if (req.file) {
+      const buffer = req.file.buffer;
+      const profileUrl = await uploadOnCloudinary(buffer);
+      user.profileImage = profileUrl;
+    }
+
+    await user.save();
+    res.redirect("/profile");
+  } catch (error) {
+    console.error('Error in /update route:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 
 
 
