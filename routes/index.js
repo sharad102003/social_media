@@ -12,8 +12,6 @@ const upload = require("./multer");
 const { redirect } = require('express/lib/response');
 const comment = require('./comment');
 const uploadOnCloudinary = require('../utility/cloudinary');
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
 
 router.get('/', function(req, res) {
   res.render('index', {footer: false});
