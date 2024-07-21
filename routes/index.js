@@ -1,3 +1,4 @@
+require('dotenv').config();
 var express = require('express');
 var router = express.Router();
 const userModel = require("./users");
@@ -10,6 +11,7 @@ passport.use(new localStrategy(userModel.authenticate()));
 const upload = require("./multer");
 const { redirect } = require('express/lib/response');
 const comment = require('./comment');
+const uploadOnCloudinary = require('../utility/cloudinary');
 
 router.get('/', function(req, res) {
   res.render('index', {footer: false});
@@ -42,6 +44,7 @@ router.get('/chat/:id', isLoggedIn, async function(req, res) {
     receiveruser:  req.params.id,
     text: req.body.text,
     
+  
   });
   user.chats.push(chat._id);
   userchat.chats.push(chat._id);
@@ -210,30 +213,60 @@ function isLoggedIn(req, res, next){
   if(req.isAuthenticated()) return next(); // corrected from req.authenticated()
   res.redirect("/login");
 }
-router.post('/update',upload.single('image'),async function(req, res, next) {
-  const user = await userModel.findOneAndUpdate(
-    {username: req.session.passport.user},
-    {username: req.body.username, name: req.body.name, bio: req.body.bio},
-    {new: true});
-    if(req.file)
-   { user.profileImage = req.file.filename;}
+router.post('/update', upload.single('image'), async function(req, res, next) {
+  try {
+    const user = await userModel.findOneAndUpdate(
+      { username: req.session.passport.user },
+      { username: req.body.username, name: req.body.name, bio: req.body.bio },
+      { new: true }
+    );
+
+    if (req.file) {
+      console.log('File uploaded:', req.file);
+      const profilePath = req.file.path;
+      const profileUrl = await uploadOnCloudinary(profilePath);
+      console.log('Profile URL:', profileUrl);
+      user.profileImage = profileUrl;
+    } else {
+      console.log('No file uploaded');
+    }
+
     await user.save();
     res.redirect("/profile");
-
+  } catch (error) {
+    next(error);
+  }
 });
 
-router.post('/upload', isLoggedIn,upload.single('image'),async function(req, res) {
-  const user = await userModel.findOne({username: req.session.passport.user});
-  const post = await postModel.create({
-    picture : req.file.filename,
-    user: user._id,
-    caption: req.body.caption
-  });
-  user.posts.push(post._id);
-  await user.save();
-  res.redirect("/feed");
+router.post('/upload', isLoggedIn, upload.single('image'), async function(req, res) {
+  try {
+    const user = await userModel.findOne({ username: req.session.passport.user });
 
+    let uploadUrl = null; // Initialize uploadUrl
+
+    if (req.file) {
+      const uploadPath = req.file.path;
+      uploadUrl = await uploadOnCloudinary(uploadPath); // Assign the result to uploadUrl
+    } else {
+      console.log('No file uploaded');
+    }
+
+    // Ensure that uploadUrl is only used if it is not null
+    const post = await postModel.create({
+      picture: uploadUrl,
+      user: user._id,
+      caption: req.body.caption
+    });
+
+    user.posts.push(post._id);
+    await user.save();
+    res.redirect("/feed");
+  } catch (error) {
+    console.error('Error in /upload route:', error);
+    res.status(500).send('Internal Server Error');
+  }
 });
+
 
 
 module.exports= router;

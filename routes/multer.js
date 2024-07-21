@@ -13,3 +13,4 @@ cb(null, uniqueFilename+path.extname(file.originalname)); // Use the unique file
 const upload = multer({ storage: storage });
 
 module.exports =upload;
+
