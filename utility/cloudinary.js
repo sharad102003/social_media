@@ -25,4 +25,3 @@ const uploadOnCloudinary = (buffer) => {
 };
 
 module.exports = uploadOnCloudinary;
-
