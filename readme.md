@@ -35,7 +35,7 @@ Installation:------😇
 Clone the repository:
 bash
 Copy code
-git clone https://github.com/yourusername/instagram-clone.git
+git clone (repo link)
 cd instagram-clone
 
 
@@ -57,9 +57,13 @@ Create a .env file in the backend directory with the following environment varia
 bash
 Copy code
 MONGODB_URI=<your-mongodb-uri>
+
 JWT_SECRET=<your-jwt-secret>
+
 CLOUDINARY_CLOUD_NAME=<your-cloudinary-cloud-name>
+
 CLOUDINARY_API_KEY=<your-cloudinary-api-key>
+
 CLOUDINARY_API_SECRET=<your-cloudinary-api-secret>
 
 
